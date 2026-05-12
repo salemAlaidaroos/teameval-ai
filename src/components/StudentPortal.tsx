@@ -4,24 +4,61 @@
  */
 
 import React, { useState } from 'react';
-import { ProjectState, Student, Contribution, Task } from '../types';
+import { ProjectState, Student, Contribution } from '../types';
 import { geminiService } from '../services/gemini';
-import { Send, Link as LinkIcon, FileUp, Type, Loader2, Star, CheckCircle2, Layout, ExternalLink, Clock } from 'lucide-react';
+import { Send, Link as LinkIcon, FileUp, Type, Loader2, Star, CheckCircle2, Layout, Clock, Users, PlusCircle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
 interface StudentPortalProps {
   project: ProjectState;
-  student: Student;
+  student: Student | null;
+  activeStudentId: string;
+  onSelectStudent: (id: string) => void;
   onAddContribution: (contribution: Contribution) => void;
+  onBackToHome: () => void;
+  onOpenSetup: () => void;
 }
 
-export default function StudentPortal({ project, student, onAddContribution }: StudentPortalProps) {
+export default function StudentPortal({ project, student, activeStudentId, onSelectStudent, onAddContribution, onBackToHome, onOpenSetup }: StudentPortalProps) {
   const [activeTab, setActiveTab] = useState<'tasks' | 'upload'>('tasks');
   const [uploadType, setUploadType] = useState<Contribution['type']>('text');
   const [content, setContent] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Empty state: no students in the project
+  if (!student) {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={onBackToHome}
+          className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+          aria-label="العودة للصفحة الرئيسية"
+        >
+          <ArrowRight size={16} />
+          العودة للصفحة الرئيسية
+        </button>
+
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-3xl p-12 text-center max-w-md mx-auto space-y-6">
+            <div className="w-20 h-20 mx-auto bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center">
+              <Users size={36} className="text-slate-600" />
+            </div>
+            <h2 className="text-xl font-bold text-white">لا يوجد طلاب في المشروع بعد</h2>
+            <p className="text-sm text-slate-500 italic">أضف طلاباً عبر معالج إعداد المشروع</p>
+            <button
+              onClick={onOpenSetup}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-purple-500/20"
+            >
+              <PlusCircle size={18} />
+              إعداد مشروع جديد
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const studentTasks = project.tasks.filter(t => t.assignedTo === student.id);
   const studentContributions = project.contributions.filter(c => c.studentId === student.id);
@@ -54,23 +91,63 @@ export default function StudentPortal({ project, student, onAddContribution }: S
 
   return (
     <div className="space-y-8">
-      {/* Student Welcome */}
+      {/* Top Actions: Back + Setup */}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={onBackToHome}
+          className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+          aria-label="العودة للصفحة الرئيسية"
+        >
+          <ArrowRight size={16} />
+          العودة للصفحة الرئيسية
+        </button>
+        <button
+          onClick={onOpenSetup}
+          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl px-4 py-2 text-sm font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-purple-500/20"
+          aria-label="إعداد مشروع جديد"
+        >
+          <PlusCircle size={16} />
+          إعداد مشروع جديد
+        </button>
+      </div>
+
+      {/* Student Welcome + Student Selector */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-light tracking-tight">مرحباً، <span className="font-bold text-purple-400">{student.name}</span></h1>
           <p className="text-slate-500 text-sm italic">أهلاً بك في منصة التقييم. تابع مهامك ووثق مساهماتك.</p>
         </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-6 backdrop-blur-md">
-          <div className="text-center">
-            <span className="block text-[9px] uppercase font-bold text-slate-500 tracking-widest">نقاط الجودة</span>
-            <span className="text-xl font-black flex items-center justify-center gap-1 text-white">
-              <Star size={16} className="text-yellow-400 fill-yellow-400" />
-              {studentContributions.reduce((acc, c) => acc + (c.analysis?.score || 0), 0)}
-            </span>
-          </div>
-          <div className="text-center">
-             <span className="block text-[9px] uppercase font-bold text-slate-500 tracking-widest">المهام المكتملة</span>
-             <span className="text-xl font-black text-white italic">{studentTasks.filter(t => t.status === 'completed').length} / {studentTasks.length}</span>
+
+        <div className="flex items-center gap-4">
+          {/* Student Selector */}
+          {project.students.length > 1 && (
+            <select
+              value={activeStudentId}
+              onChange={(e) => onSelectStudent(e.target.value)}
+              className="bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all appearance-none cursor-pointer"
+              aria-label="اختيار الطالب"
+            >
+              {project.students.map(s => (
+                <option key={s.id} value={s.id} className="bg-[#1A1A1B]">
+                  {s.name} {s.role === 'leader' ? '(قائد)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Stats */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-6 backdrop-blur-md">
+            <div className="text-center">
+              <span className="block text-[9px] uppercase font-bold text-slate-500 tracking-widest">نقاط الجودة</span>
+              <span className="text-xl font-black flex items-center justify-center gap-1 text-white">
+                <Star size={16} className="text-yellow-400 fill-yellow-400" />
+                {studentContributions.reduce((acc, c) => acc + (c.analysis?.score || 0), 0)}
+              </span>
+            </div>
+            <div className="text-center">
+               <span className="block text-[9px] uppercase font-bold text-slate-500 tracking-widest">المهام المكتملة</span>
+               <span className="text-xl font-black text-white italic">{studentTasks.filter(t => t.status === 'completed').length} / {studentTasks.length}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -154,7 +231,7 @@ export default function StudentPortal({ project, student, onAddContribution }: S
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                          <h4 className="text-sm font-bold text-white truncate">{project.tasks.find(t => t.id === c.taskId)?.title}</h4>
+                          <h4 className="text-sm font-bold text-white truncate">{project.tasks.find(t => t.id === c.taskId)?.title || 'مهمة محذوفة'}</h4>
                           <span className="text-[10px] font-mono text-slate-500">{new Date(c.timestamp).toLocaleDateString('ar-EG')}</span>
                         </div>
                         <p className="text-xs text-slate-400 mt-1 truncate italic">"{c.content}"</p>
@@ -171,6 +248,9 @@ export default function StudentPortal({ project, student, onAddContribution }: S
                       </div>
                     </div>
                   ))}
+                  {studentContributions.length === 0 && (
+                    <div className="text-center py-12 text-slate-600 text-xs italic">لا توجد مساهمات بعد</div>
+                  )}
                 </div>
               </section>
             </div>

@@ -4,24 +4,32 @@
  */
 
 import { useState } from 'react';
-import { ProjectState, Contribution, Student } from '../types';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ShieldAlert, TrendingUp, Clock, CheckCircle2, AlertTriangle, User, MoreHorizontal, ArrowUpRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { ProjectState } from '../types';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { ShieldAlert, TrendingUp, Clock, CheckCircle2, ArrowRight, ArrowUpRight, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import React from 'react';
 import { cn } from '../lib/utils';
 import RiskHeatmap from './RiskHeatmap';
 import TimelineGraph from './TimelineGraph';
+import FinalReportModal from './FinalReportModal';
 
 interface DashboardProps {
   project: ProjectState;
+  onBackToHome: () => void;
 }
 
 const COLORS = ['#A855F7', '#EC4899', '#3B82F6', '#F59E0B', '#10B981', '#6366F1'];
 
-export default function Dashboard({ project }: DashboardProps) {
+export default function Dashboard({ project, onBackToHome }: DashboardProps) {
+  const [showReportModal, setShowReportModal] = useState(false);
+  const isMock = project.isMockData === true;
+
   // Calculate stats
-  const totalWeight = project.tasks.reduce((acc, t) => acc + t.weight, 0);
+  const completedTasks = project.tasks.filter(t => t.status === 'completed').length;
+  const totalTasks = project.tasks.length;
+  const completionPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
   const contributionByStudent = project.students.map(s => {
     const studentContributions = project.contributions.filter(c => c.studentId === s.id);
     const scoreSum = studentContributions.reduce((acc, c) => acc + (c.analysis?.score || 0), 0);
@@ -32,17 +40,59 @@ export default function Dashboard({ project }: DashboardProps) {
     };
   }).filter(d => d.value > 0);
 
+  // Real total score percentage for pie chart center
+  const allScores = project.contributions.map(c => c.analysis?.score || 0);
+  const totalScoreSum = allScores.reduce((a, b) => a + b, 0);
+  const maxPossible = project.contributions.length * 10;
+  const realTotalPct = maxPossible > 0 ? Math.round((totalScoreSum / maxPossible) * 100) : 0;
+
+  // Dynamic risk cards for real projects
+  const dynamicRisks = !isMock ? project.students
+    .map(s => {
+      const contribs = project.contributions.filter(c => c.studentId === s.id);
+      const assignedTasks = project.tasks.filter(t => t.assignedTo === s.id);
+      if (contribs.length === 0 && assignedTasks.length > 0) {
+        return { student: s.name, type: 'الخمول المفاجئ' as const, message: 'لم يتم تسجيل أي مساهمة رغم وجود مهام مسندة.', level: 'critical' as const, risk: 'عالي' };
+      }
+      if (contribs.length > 0 && contribs.every(c => c.analysis?.quality === 'Minor')) {
+        return { student: s.name, type: 'جودة منخفضة' as const, message: 'جميع المساهمات مصنفة كـ Minor — الجودة تحتاج تحسين.', level: 'warning' as const, risk: 'متوسط' };
+      }
+      return null;
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+    .slice(0, 2)
+  : [];
+
   return (
     <div className="space-y-8">
+      {/* Back to Home */}
+      <button
+        onClick={onBackToHome}
+        className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+        aria-label="العودة للصفحة الرئيسية"
+      >
+        <ArrowRight size={16} />
+        العودة للصفحة الرئيسية
+      </button>
+
       {/* Header */}
       <header className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-light tracking-tight mb-1">TEAM <span className="font-bold text-purple-400">EVAL</span></h1>
+          <h1 className="text-3xl font-black text-purple-400 tracking-tight mb-1">مرآة</h1>
           <p className="text-slate-500 max-w-2xl text-sm italic">{project.description}</p>
         </div>
         <div className="flex gap-4">
-          <StatMini label="اكتمال المهام" value="65%" icon={<CheckCircle2 size={16} className="text-purple-400" />} />
-          <StatMini label="ساعات الجهد" value="124" icon={<Clock size={16} className="text-blue-400" />} />
+          <StatMini
+            label="اكتمال المهام"
+            value={isMock ? "65%" : `${completionPct}%`}
+            icon={<CheckCircle2 size={16} className="text-purple-400" />}
+          />
+          <StatMini
+            label="ساعات الجهد"
+            // TODO: derive from real time-tracking data once available
+            value={isMock ? "124" : "—"}
+            icon={<Clock size={16} className="text-blue-400" />}
+          />
         </div>
       </header>
 
@@ -61,20 +111,40 @@ export default function Dashboard({ project }: DashboardProps) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <RiskCard 
-                student="خالد محمد" 
-                risk="92%" 
-                type="الخمول المفاجئ" 
-                message="لم يتم تسجيل أي نشاط برمجي منذ 21 يوماً." 
-                level="critical"
-              />
-              <RiskCard 
-                student="ليلى فهد" 
-                risk="45%" 
-                type="نشاط شاذ" 
-                message="رفع مساهمات ضخمة في وقت قصير جداً قبل الموعد النهائي." 
-                level="warning"
-              />
+              {isMock ? (
+                <>
+                  <RiskCard 
+                    student="خالد محمد" 
+                    risk="92%" 
+                    type="الخمول المفاجئ" 
+                    message="لم يتم تسجيل أي نشاط برمجي منذ 21 يوماً." 
+                    level="critical"
+                  />
+                  <RiskCard 
+                    student="ليلى فهد" 
+                    risk="45%" 
+                    type="نشاط شاذ" 
+                    message="رفع مساهمات ضخمة في وقت قصير جداً قبل الموعد النهائي." 
+                    level="warning"
+                  />
+                </>
+              ) : dynamicRisks.length > 0 ? (
+                dynamicRisks.map((r, i) => (
+                  <RiskCard
+                    key={i}
+                    student={r.student}
+                    risk={r.risk}
+                    type={r.type}
+                    message={r.message}
+                    level={r.level}
+                  />
+                ))
+              ) : (
+                <div className="col-span-2 flex items-center justify-center gap-3 py-8 text-green-500">
+                  <CheckCircle size={20} />
+                  <span className="text-sm font-bold">لا توجد مخاطر مكتشفة حالياً ✓</span>
+                </div>
+              )}
             </div>
             
             <RiskHeatmap project={project} />
@@ -106,51 +176,62 @@ export default function Dashboard({ project }: DashboardProps) {
               </h2>
             </div>
             
-            <div className="h-64 mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={contributionByStudent}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {contributionByStudent.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A1A1B', borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', color: '#fff' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <span className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total</span>
-                  <span className="text-xl font-black text-white italic">88%</span>
+            {contributionByStudent.length > 0 ? (
+              <>
+                <div className="h-64 mb-6 relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={contributionByStudent}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {contributionByStudent.map((_entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1A1A1B', borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', color: '#fff' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-center">
+                      <span className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total</span>
+                      <span className="text-xl font-black text-white italic">{isMock ? '88%' : `${realTotalPct}%`}</span>
+                    </div>
+                  </div>
                 </div>
+
+                <div className="space-y-4 flex-1">
+                  {contributionByStudent.map((data, idx) => (
+                    <div key={data.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                        <span className="text-xs font-medium text-slate-300">{data.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-[10px] font-mono text-slate-500">{data.contributionsCount} مساهمات</span>
+                        <span className="text-xs font-bold text-white">{Math.round((data.value / contributionByStudent.reduce((a, b) => a + b.value, 0)) * 100)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center py-12">
+                <p className="text-sm text-slate-500 italic">لا توجد مساهمات بعد</p>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-4 flex-1">
-              {contributionByStudent.map((data, idx) => (
-                <div key={data.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                    <span className="text-xs font-medium text-slate-300">{data.name}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-mono text-slate-500">{data.contributionsCount} مساهمات</span>
-                    <span className="text-xs font-bold text-white">{Math.round((data.value / contributionByStudent.reduce((a, b) => a + b.value, 0)) * 100)}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button className="mt-8 w-full py-3 bg-white text-black rounded-full text-xs font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="mt-8 w-full py-3 bg-white text-black rounded-full text-xs font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
               استخراج التقرير النهائي <ArrowUpRight size={16} />
             </button>
           </section>
@@ -164,45 +245,58 @@ export default function Dashboard({ project }: DashboardProps) {
           <h2 className="text-lg font-bold">آخر المساهمات المرفوعة</h2>
           <span className="text-[10px] font-bold text-purple-400 border border-purple-500/30 px-2 py-1 rounded-md uppercase tracking-wider">Activity Feed</span>
         </div>
-        <div className="divide-y divide-white/5">
-          {project.contributions.map((c) => {
-            const student = project.students.find(s => s.id === c.studentId);
-            return (
-              <div key={c.id} className="data-grid-row grid-cols-[1.2fr_2fr_1.5fr_120px] items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600/20 to-pink-500/20 border border-white/10 flex items-center justify-center font-bold text-xs">
-                    {student?.name.charAt(0)}
+        {project.contributions.length > 0 ? (
+          <div className="divide-y divide-white/5">
+            {project.contributions.map((c) => {
+              const student = project.students.find(s => s.id === c.studentId);
+              return (
+                <div key={c.id} className="data-grid-row grid-cols-[1.2fr_2fr_1.5fr_120px] items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600/20 to-pink-500/20 border border-white/10 flex items-center justify-center font-bold text-xs">
+                      {student?.name?.charAt(0) || '?'}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-white">{student?.name || 'غير معروف'}</span>
+                      <span className="text-[10px] text-slate-500 uppercase">{c.type} update</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-white">{student?.name}</span>
-                    <span className="text-[10px] text-slate-500 uppercase">{c.type} update</span>
+                  <div>
+                    <p className="text-xs text-slate-400 truncate">{c.content}</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                     <div className="flex gap-2">
+                       <span className={cn(
+                         "px-2 py-0.5 rounded text-[9px] font-bold uppercase border",
+                         c.analysis?.quality === 'Critical' ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                         c.analysis?.quality === 'Major' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                         "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                       )}>
+                         {c.analysis?.quality || 'Under Review'}
+                       </span>
+                       <span className="text-[9px] font-mono text-purple-400 bg-purple-500/10 px-1.5 rounded">{c.analysis?.score}/10</span>
+                     </div>
+                     <span className="text-[10px] text-slate-500 mt-1 max-w-[150px] truncate italic">"{c.analysis?.feedback}"</span>
+                  </div>
+                  <div className="text-left font-mono text-[10px] text-slate-500">
+                    {new Date(c.timestamp).toLocaleDateString('ar-EG')}
                   </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-400 truncate">{c.content}</p>
-                </div>
-                <div className="flex flex-col items-center">
-                   <div className="flex gap-2">
-                     <span className={cn(
-                       "px-2 py-0.5 rounded text-[9px] font-bold uppercase border",
-                       c.analysis?.quality === 'Critical' ? "bg-red-500/10 text-red-400 border-red-500/20" :
-                       c.analysis?.quality === 'Major' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
-                       "bg-slate-500/10 text-slate-400 border-slate-500/20"
-                     )}>
-                       {c.analysis?.quality || 'Under Review'}
-                     </span>
-                     <span className="text-[9px] font-mono text-purple-400 bg-purple-500/10 px-1.5 rounded">{c.analysis?.score}/10</span>
-                   </div>
-                   <span className="text-[10px] text-slate-500 mt-1 max-w-[150px] truncate italic">"{c.analysis?.feedback}"</span>
-                </div>
-                <div className="text-left font-mono text-[10px] text-slate-500">
-                  {new Date(c.timestamp).toLocaleDateString('ar-EG')}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <p className="text-sm text-slate-500 italic">لا توجد مساهمات مرفوعة بعد</p>
+          </div>
+        )}
       </section>
+
+      {/* Final Report Modal */}
+      <AnimatePresence>
+        {showReportModal && (
+          <FinalReportModal project={project} onClose={() => setShowReportModal(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

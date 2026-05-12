@@ -10,15 +10,61 @@ interface TimelineGraphProps {
   project: ProjectState;
 }
 
+// Demo data for mock projects
+const MOCK_DATA = [
+  { name: 'أسبوع 1', total: 10, s1: 5, s2: 3, s4: 2 },
+  { name: 'أسبوع 2', total: 25, s1: 10, s2: 8, s4: 7 },
+  { name: 'أسبوع 3', total: 45, s1: 20, s2: 15, s4: 10 },
+  { name: 'أسبوع 4', total: 70, s1: 30, s2: 25, s4: 15 },
+  { name: 'أسبوع 5', total: 95, s1: 45, s2: 35, s4: 15 },
+];
+
+/**
+ * Derives weekly timeline data from real contributions.
+ * Buckets contributions into the last 5 weeks relative to today,
+ * computing cumulative score totals per week.
+ */
+function deriveRealData(project: ProjectState): { name: string; total: number }[] {
+  const now = new Date();
+  const weeks: { name: string; total: number }[] = [];
+
+  for (let w = 4; w >= 0; w--) {
+    const weekEnd = new Date(now);
+    weekEnd.setDate(now.getDate() - w * 7);
+    const weekStart = new Date(weekEnd);
+    weekStart.setDate(weekEnd.getDate() - 6);
+
+    const weekContribs = project.contributions.filter(c => {
+      const d = new Date(c.timestamp);
+      return d >= weekStart && d <= weekEnd;
+    });
+
+    const total = weekContribs.reduce((acc, c) => acc + (c.analysis?.score || 0), 0);
+    weeks.push({ name: `أسبوع ${5 - w}`, total });
+  }
+
+  // Convert to cumulative
+  let cumulative = 0;
+  return weeks.map(w => {
+    cumulative += w.total;
+    return { ...w, total: cumulative };
+  });
+}
+
 export default function TimelineGraph({ project }: TimelineGraphProps) {
-  // Generate dummy data for the timeline representing project velocity
-  const data = [
-    { name: 'أسبوع 1', total: 10, s1: 5, s2: 3, s4: 2 },
-    { name: 'أسبوع 2', total: 25, s1: 10, s2: 8, s4: 7 },
-    { name: 'أسبوع 3', total: 45, s1: 20, s2: 15, s4: 10 },
-    { name: 'أسبوع 4', total: 70, s1: 30, s2: 25, s4: 15 },
-    { name: 'أسبوع 5', total: 95, s1: 45, s2: 35, s4: 15 },
-  ];
+  const isMock = project.isMockData === true;
+  const data = isMock ? MOCK_DATA : deriveRealData(project);
+
+  // Check if real data has any contributions
+  const hasRealData = !isMock && data.some(d => d.total > 0);
+
+  if (!isMock && !hasRealData) {
+    return (
+      <div className="h-48 w-full flex items-center justify-center">
+        <p className="text-sm text-slate-500 italic">لم تُسجَّل أي مساهمات بعد</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-48 w-full">
@@ -65,15 +111,18 @@ export default function TimelineGraph({ project }: TimelineGraphProps) {
             fill="url(#colorTotal)" 
             animationDuration={2000}
           />
-          <Area 
-            type="monotone" 
-            dataKey="s1" 
-            stroke="#3B82F6" 
-            strokeWidth={2} 
-            strokeDasharray="5 5"
-            fillOpacity={1} 
-            fill="url(#colorS1)" 
-          />
+          {/* Only show the s1 line for mock data which has that key */}
+          {isMock && (
+            <Area 
+              type="monotone" 
+              dataKey="s1" 
+              stroke="#3B82F6" 
+              strokeWidth={2} 
+              strokeDasharray="5 5"
+              fillOpacity={1} 
+              fill="url(#colorS1)" 
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>

@@ -41,4 +41,5 @@ export interface ProjectState {
   students: Student[];
   tasks: Task[];
   contributions: Contribution[];
+  isMockData?: boolean;
 }
