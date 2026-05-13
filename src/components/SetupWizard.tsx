@@ -6,12 +6,13 @@
 import { useState, useRef } from 'react';
 import { ProjectState, Task, Student } from '../types';
 import { geminiService } from '../services/gemini';
-import { Sparkles, Loader2, ArrowLeft, Check, Plus, Trash2, Upload, FileText, X } from 'lucide-react';
+import { Sparkles, Loader2, ArrowLeft, ArrowRight, Check, Plus, Trash2, Upload, FileText, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
 interface SetupWizardProps {
   onComplete: (project: ProjectState) => void;
+  onBackToHome: () => void;
 }
 
 /**
@@ -56,7 +57,7 @@ function distributeTasksByWeight(tasks: Task[], students: Student[]): Task[] {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'txt', 'md'];
 
-export default function SetupWizard({ onComplete }: SetupWizardProps) {
+export default function SetupWizard({ onComplete, onBackToHome }: SetupWizardProps) {
   const [step, setStep] = useState(1);
   const [description, setDescription] = useState('');
   const [tasks, setTasks] = useState<Partial<Task>[]>([]);
@@ -186,6 +187,23 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] -ml-32 -mb-32" />
       
       <div className="relative z-10">
+        <div className="flex justify-start mb-6">
+          <button
+            onClick={() => {
+              if (step > 1) {
+                const confirmed = window.confirm('هل أنت متأكد من الخروج؟ سيتم فقدان التقدم الحالي.');
+                if (!confirmed) return;
+              }
+              onBackToHome();
+            }}
+            aria-label="العودة للصفحة الرئيسية"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-all text-sm"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span>العودة للصفحة الرئيسية</span>
+          </button>
+        </div>
+
         <header className="mb-12 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full text-[10px] font-black uppercase mb-6 tracking-[0.2em] shadow-lg shadow-purple-500/20">
             Smart Neural Setup

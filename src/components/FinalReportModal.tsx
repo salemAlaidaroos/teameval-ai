@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ProjectState } from '../types';
-import { X, Download, AlertTriangle, TrendingDown } from 'lucide-react';
+import { X, Download, Check, AlertTriangle, TrendingDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -18,6 +18,21 @@ const COLORS = ['#A855F7', '#EC4899', '#3B82F6', '#F59E0B', '#10B981', '#6366F1'
 
 export default function FinalReportModal({ project, onClose }: FinalReportModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [downloaded, setDownloaded] = useState(false);
+
+  const isDownloadable = project.isMockData === true;
+
+  const handleDownload = () => {
+    if (!isDownloadable) return;
+    const link = document.createElement('a');
+    link.href = '/reports/miraah-final-report.pdf';
+    link.download = 'تقرير-مرآة-النهائي.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2000);
+  };
 
   // Close on Esc key
   useEffect(() => {
@@ -317,16 +332,37 @@ export default function FinalReportModal({ project, onClose }: FinalReportModalP
           {/* Divider */}
           <div className="border-t border-white/5" />
 
-          {/* Section D: Download Button (disabled MVP) */}
+          {/* Section D: Download Button */}
           <section className="flex flex-col items-center gap-3 pb-4">
-            <button
-              disabled
-              className="w-full max-w-md py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 opacity-60 cursor-not-allowed shadow-xl"
+            <motion.button
+              onClick={handleDownload}
+              disabled={!isDownloadable}
+              aria-label="تحميل التقرير النهائي بصيغة PDF"
+              aria-disabled={!isDownloadable}
+              title={isDownloadable ? undefined : 'هذه الميزة غير متاحة في المشاريع المنشأة حديثاً'}
+              whileHover={isDownloadable ? { y: -2 } : undefined}
+              className={cn(
+                "w-full max-w-md py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all",
+                isDownloadable
+                  ? "opacity-100 cursor-pointer hover:shadow-lg hover:shadow-purple-500/30"
+                  : "opacity-60 cursor-not-allowed"
+              )}
             >
-              <Download size={20} />
-              تحميل التقرير النهائي (PDF)
-            </button>
-            <span className="text-[10px] text-slate-500 italic">قريباً — متاح في النسخة القادمة</span>
+              {downloaded ? (
+                <>
+                  <Check size={20} />
+                  تم بدء التحميل
+                </>
+              ) : (
+                <>
+                  <Download size={20} />
+                  تحميل التقرير النهائي (PDF)
+                </>
+              )}
+            </motion.button>
+            <span className="text-xs text-slate-400 italic">
+              {isDownloadable ? 'تقرير جاهز للتحميل' : 'قريباً — متاح في النسخة القادمة'}
+            </span>
           </section>
         </div>
       </motion.div>

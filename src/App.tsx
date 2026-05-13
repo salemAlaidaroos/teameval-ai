@@ -164,10 +164,13 @@ export default function App() {
               exit={{ opacity: 0, scale: 1.05 }}
               className="p-8 max-w-3xl mx-auto"
             >
-              <SetupWizard onComplete={(newProject) => {
-                setProject(newProject);
-                setView('doctor');
-              }} />
+              <SetupWizard
+                onComplete={(newProject) => {
+                  setProject(newProject);
+                  setView('student');
+                }}
+                onBackToHome={() => setView('student')}
+              />
             </motion.div>
           )}
         </AnimatePresence>
