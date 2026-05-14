@@ -1,24 +1,24 @@
-# 🪞 مرآة (MIRA'AH) — نظام التقييم الذكي لفرق العمل
+# 🪞 MIRA'AH — AI-Powered Team Evaluation System
 
-## نبذة عن المشروع
+## About the Project
 
-مشروع **مرآة** هو منصة ذكية تم تطويرها ضمن فعاليات **هاكاثون النزاهة الأكاديمية**، يهدف إلى القضاء على ظاهرة "الاتكالية" (Free-riding) في المشاريع الجامعية المشتركة وضمان تحقيق العدالة الأكاديمية.
+**Mira'ah** (Mirror) is an intelligent platform developed during the **Academic Integrity Hackathon** — winning **3rd Place** 🏆 — designed to eliminate the "free-riding" phenomenon in collaborative university projects and ensure academic fairness.
 
-يعتمد النظام على تقنيات الذكاء الاصطناعي لتحليل متطلبات المشاريع، تقسيم المهام بأوزان عادلة، وتقييم إسهامات الطلاب بشكل دقيق وموضوعي بناءً على الجهد الفعلي — مما يخلق بيئة أكاديمية شفافة وعادلة.
-
----
-
-## ✨ الميزات الرئيسية
-
--  **التوزيع العادل بالذكاء الاصطناعي:** تقسيم متطلبات المشروع آلياً إلى مهام واضحة بدلاً من التقسيم اليدوي العشوائي.
--  **نظام "أوزان الجهد" (Task Pricing):** إعطاء قيمة رقمية لكل مهمة بناءً على مستوى تعقيدها لمنع احتكار المهام البسيطة.
--  **التقييم الفوري للمساهمات:** تحليل النصوص والملفات المرفوعة لتقييم جودة عمل الطالب الفعلي (مفصلي، رئيسي، ثانوي).
--  **نظام الرصد والبطاقات الحمراء:** كشف مبكر لحالات الخمول المفاجئ أو النشاط الشاذ قبل مواعيد التسليم النهائية.
--  **تقارير موثقة (PDF):** تصدير تقارير رسمية شاملة توضح نسبة مساهمة كل طالب لتعتمد عليها لجنة التحكيم أو أستاذ المادة.
+The system leverages AI to analyze project requirements, divide tasks with fair weights, and evaluate student contributions accurately and objectively based on actual effort — creating a transparent and equitable academic environment.
 
 ---
 
-## 🛠️ التقنيات المستخدمة
+## ✨ Key Features
+
+- **AI-Powered Fair Distribution:** Automatically splits project requirements into clear tasks, replacing random manual division.
+- **"Effort Weights" System (Task Pricing):** Assigns a numerical value to each task based on its complexity level, preventing monopolization of easy tasks.
+- **Real-Time Contribution Evaluation:** Analyzes uploaded texts and files to assess the actual quality of a student's work (Critical, Major, Minor).
+- **Monitoring & Red Card System:** Early detection of sudden inactivity or unusual activity spikes before final deadlines.
+- **Documented Reports (PDF Export):** Exports comprehensive official reports showing each student's contribution percentage, for use by the judging committee or course instructor.
+
+---
+
+## 🛠️ Technologies Used
 
 - **Frontend:** React.js · TypeScript · Vite
 - **Styling:** Tailwind CSS (Dark Mode & UI/UX Design)
@@ -26,95 +26,105 @@
 
 ---
 
-## 📁 هيكلة الملفات
+## 📁 File Structure
 
 ```
 teameval-ai/
 ├── src/
 │   ├── components/
-│   │   ├── Dashboard.tsx        # لوحة تحكم النزاهة الرئيسية
-│   │   ├── RiskHeatmap.tsx      # الخريطة الحرارية للمخاطر
-│   │   ├── SetupWizard.tsx      # شاشة إعداد المشروع الذكي
-│   │   ├── StudentPortal.tsx    # بوابة الطالب لتسليم الإسهامات
-│   │   └── TimelineGraph.tsx    # رسم بياني لتتبع سير المشروع
+│   │   ├── Dashboard.tsx        # Main integrity control panel
+│   │   ├── RiskHeatmap.tsx      # Risk heatmap
+│   │   ├── SetupWizard.tsx      # Smart project setup screen
+│   │   ├── StudentPortal.tsx    # Student portal for submitting contributions
+│   │   └── TimelineGraph.tsx    # Project progress tracking graph
 │   ├── services/
-│   │   └── gemini.ts            # خدمات الربط مع نماذج الذكاء الاصطناعي
-│   ├── types.ts                 # الهياكل البيانية
+│   │   └── gemini.ts            # AI model integration services
+│   ├── types.ts                 # Data structures
 │   ├── App.tsx
 │   └── main.tsx
-├── .env                         # متغيرات البيئة
+├── .env                         # Environment variables
 ├── package.json
 └── vite.config.ts
 ```
 
 ---
 
-### 🖥️ جولة في شاشات المنصة
+## 🖥️ Platform Screen Tour
 
-### 1. إعداد المشروع الذكي وتوزيع المهام
+### 1. Smart Project Setup & Task Distribution
+
+These screens allow the team leader to input project requirements — either via text or file upload — then the AI model steps in to suggest a task list and "price" each task (assigning a weight from 1 to 10) based on the effort required, ensuring a balanced workload among team members from day one. Team members' names are then entered.
+
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/5fd180a8-90a8-4d07-a124-9978025718af" width="32%" title="إدخال وصف المشروع">
-  <img src="https://github.com/user-attachments/assets/fa5de5b1-10ac-4198-a9fc-35f180cdba67" width="32%" title="تسعير المهام">
-  <img src="https://github.com/user-attachments/assets/fbaa60ba-e2b7-4dc5-b712-c65be65a685b" width="32%" title="إضافة الفريق">
+  <img src="https://github.com/user-attachments/assets/5fd180a8-90a8-4d07-a124-9978025718af" width="800" title="Project Description Input"><br><br>
+  <img src="https://github.com/user-attachments/assets/fa5de5b1-10ac-4198-a9fc-35f180cdba67" width="800" title="Task Pricing"><br><br>
+  <img src="https://github.com/user-attachments/assets/fbaa60ba-e2b7-4dc5-b712-c65be65a685b" width="800" title="Adding Team Members">
 </p>
-
-تتيح هذه الشاشة لقائد الفريق إدخال متطلبات المشروع. يتدخل نموذج الذكاء الاصطناعي ليقترح قائمة بالمهام، ويقوم بـ"تسعير" كل مهمة (إعطائها وزن من 1 إلى 10) بناءً على الجهد المطلوب لإنجازها، مما يضمن توزيعاً متوازناً للعمل بين أعضاء الفريق منذ اليوم الأول.
 
 ---
 
-### 2. بوابة الطالب وتوثيق المساهمات
-<p align="center">
-  <img src="رابط_صورة_مهام_الطالب_هنا" width="48%" title="المهام الحالية للطالب">
-  <img src="رابط_صورة_رفع_المساهمة_هنا" width="48%" title="رفع مساهمة جديدة">
-</p>
+### 2. Student Portal & Contribution Documentation
 
-مساحة مخصصة لكل طالب لاستعراض مهامه الحالية. تتيح الواجهة للطالب رفع مساهماته سواء كانت نصوص برمجية، ملفات، أو روابط مباشرة. كما تدعم المنصة توثيق "المهام القيادية" لضمان حفظ حقوق الطلاب في الأعمال التنظيمية خارج إطار البرمجة.
+A dedicated space for each student to view their current tasks. The interface lets students upload their contributions — whether code, files, or direct links. The platform also supports documenting "leadership tasks" to preserve students' credit for organizational work outside of coding.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f9da66cc-900d-446e-9582-4ebb81e3fc31" width="800" title="Student Current Tasks"><br><br>
+  <img src="https://github.com/user-attachments/assets/b5f15985-ae60-475d-a3fa-5071c1e79054" width="800" title="Uploading a New Contribution">
+</p>
 
 ---
 
-### 3. لوحة تحكم النزاهة الأكاديمية (الداشبورد)
+### 3. Academic Integrity Dashboard
+
+The beating heart of the platform, designed for evaluators. The dashboard provides live, real-time analysis including:
+
+- **Risk Heatmap:** Detects suspicious behaviors and triggers alerts such as "sudden inactivity" or "abnormal activity."
+- **True Distribution:** A chart showing each member's completion percentage.
+- **Live Contribution Log:** Automatic AI evaluation of each contribution, classifying it (Critical, Major, Minor) to determine its actual impact on the project.
+
 <p align="center">
-  <img src="رابط_صورة_الداشبورد_هنا" width="800" title="لوحة التحكم والخريطة الحرارية">
+  <img src="https://github.com/user-attachments/assets/4f9f32a9-d3bd-4bb3-a285-bad03fbb731c" width="800" title="Dashboard & Risk Heatmap">
 </p>
-
-القلب النابض للمنصة والمصمم للمقيّم. تقدم اللوحة تحليلاً حياً ومباشراً يشمل:
-
-- 🗺️ **خريطة المخاطر:** رصد السلوكيات المشبوهة وإعطاء تنبيهات مثل "الخمول المفاجئ" أو "النشاط الشاذ".
-- 📊 **التوزيع الحقيقي:** رسم بياني يوضح نسبة إنجاز كل عضو.
-- 📋 **سجل المساهمات الفوري:** تقييم آلي من الذكاء الاصطناعي لكل مساهمة وتصنيفها (Critical, Major, Minor) لتحديد مدى تأثيرها الفعلي على المشروع.
 
 ---
 
-### 4. التقرير النهائي (PDF Export)
+### 4. Final Report (PDF Export)
+
+With a single click, the system generates and exports a professionally formatted PDF report. It includes a summary of team efforts, a percentage distribution bar, and a detailed contribution record for each student — serving as the final, fair reference for evaluation.
+
 <p align="center">
-  <img src="رابط_صورة_التقرير_هنا" width="800" title="التقرير النهائي PDF">
+  <img src="https://github.com/user-attachments/assets/e53d90fb-dba8-4206-a494-8c84f5911ff1" width="800" title="Final PDF Report">
 </p>
 
-بضغطة زر، يقوم النظام بإنشاء وتصدير تقرير PDF احترافي ومنسق. يضم التقرير ملخصاً لجهود الفريق، شريط التوزيع المئوي، وسجل الإسهامات المفصل لكل طالب — ليكون المرجع النهائي والعادل في التقييم.
+---
 
----<img width="1920" height="1200" alt="Screenshot 2026-05-13 041330" src="https://github.com/user-attachments/assets/f46af997-aee3-4b04-8efc-ed8dc67484ba" />
+##  How to Run
 
-## 🚀 طريقة التشغيل
+> Make sure **Node.js** is installed on your machine before starting.
 
-> تأكد من تثبيت **Node.js** على جهازك قبل البدء.
-
-**1. أضف مفتاح Gemini API في ملف `.env`:**
+**1. Add your Gemini API key to the `.env` file:**
 
 ```env
 VITE_GEMINI_API_KEY="your_api_key_here"
 ```
 
-**2. ثبّت المكتبات والاعتماديات:**
+**2. Install dependencies:**
 
 ```bash
 npm install
 ```
 
-**3. شغّل خادم التطوير:**
+**3. Start the development server:**
 
 ```bash
 npm run dev
 ```
 
----
+## 👥 The Team
+* **Salem Zain Alaidaroos** 
+* **Omar Ibrahim Al-Ali** 
+* **Abdulaziz Khamis Batis** 
+* **Osayd Jameel Al-Mezjaji**
 
+---
+*Built with ❤️ for the Academic Integrity Hackathon — 🏆 **3rd Place Winners!***
